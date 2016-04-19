@@ -46,10 +46,7 @@ int main()
     MatrixXd logOfX(Matrix2.rows(), Matrix2.cols());
     log_of_Matrix(logOfX, file2contentCopy);
 
-    MatrixXd Xmean(1, 9); //hard coded for now
-    MatrixXd Xstd(1, 9);    //hard coded for now
-    MatrixXd Xz(2000, 9);   //hard coded for now
-
+    MatrixXd Xmean(1, 9), Xstd(1, 9),Xz(2000, 9);   //hard coded for now
 
     for(int i = 0; i < numXcols; i++){
         Xmean(i) = logOfX.col(i).sum();
@@ -68,7 +65,7 @@ int main()
         Y(f,3) = log(Y(f,3));
     }
 
-    int numYcols = Y.cols();
+    int numYrows = Y.rows(), numYcols = Y.cols();
     double Yact[9];
     Yact[0]= 77.36266321;
     Yact[1] = log(383.1850001);
@@ -80,10 +77,8 @@ int main()
     Yact[7] = 138.66;
     Yact[8] = 0.0001757001353;
 
-    MatrixXd Ymean(1, 9); //hard coded for now
-    MatrixXd Ystd(1, 9);    //hard coded for now
-    MatrixXd Yz(2000, 9);   //hard coded for now
-    MatrixXd Yact1(1, 9);
+    MatrixXd Ymean(1, 9), Ystd(1, 9), Yz(2000, 9), Yact1(1, 9); //hard coded for now
+
     for(int i = 0; i < numYcols; i++){
         Ymean(i) = Y.col(i).sum();
         Ystd(i) = standard_deviation(Y.col(i));
@@ -102,6 +97,22 @@ int main()
     Theta = (Xz.transpose() * Xz)*Xz.transpose()*Yz;
   // MainWindow *graphing = new MainWindow(Theta);
 
+    int j = 1, k=1, l=1;
+    MatrixXd XzBayesCL(336, 9), XzBayesCL_DDR(41, 9), XzBayesCL_DDR_MDP(5, 9);
+    for (int i = 0; i < numYrows; i++){
+        if (Yz(i,2)>(-0.3348-0.1) && Yz(i,2)<(-0.3348+0.1)){
+            XzBayesCL.row(j) = Xz.row(i);
+            j++;
+            if (Yz(i,3)>(0.318-0.1) && Yz(i,3)<(0.318+0.1)){
+                XzBayesCL_DDR.row(k) = Xz.row(i);
+                k++;
+                if (Yz(i,6)>(-0.0098-0.1) && Yz(i,6)<(-0.0098+0.1)){
+                    XzBayesCL_DDR_MDP.row(l) = Xz.row(i);         //this might be an error in original!!!
+                    l++;
+                }
+            }
+        }
+    }
   return 0;
 }
 void get_dimensions(QString filename, int & row, int & column, vector<QString> & filecontents){
