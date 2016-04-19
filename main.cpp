@@ -8,24 +8,26 @@
 #include <iostream>
 #include <QDebug>
 #include <cmath>
-
+#include<mainwindow.h>
 
 using namespace Eigen;
 using namespace std;
 
 void get_dimensions(QString filename, int & row, int & column, vector<QString> & filecontents);
 void load_into_matrix(vector<QString> & filecontents, MatrixXd M);
-void log_of_Matrix(MatrixXd M, vector<QString> & filecontents);
+void load_into_matrix(vector<QString> & filecontents, MatrixXd & M);
+void log_of_Matrix(MatrixXd & M, vector<QString> & filecontents);
+double standard_deviation(MatrixXd M);
+
 int main()
 {
-
+    //importing file
     int row = 0, column = 0;
     QString file0 = "C:/Users/bec100/Desktop/data/d0.dat";
     QString file1 = "C:/Users/bec100/Desktop/data/d1.dat";
     QString file2 = "C:/Users/bec100/Desktop/data/d2.dat";
-    vector<QString> file0contents;
-    vector<QString> file1contents;
-    vector<QString> file2contents;
+
+    vector<QString> file0contents, file1contents, file2contents;
 
     get_dimensions(file0, row, column, file0contents);
     MatrixXd Matrix0(row, column);
@@ -36,29 +38,37 @@ int main()
     get_dimensions(file2, row, column, file2contents);
     vector<QString> file2contentCopy = file2contents;
     MatrixXd Matrix2(row, column);
+
     load_into_matrix(file0contents, Matrix0);
     load_into_matrix(file1contents, Matrix1);
     load_into_matrix(file2contents, Matrix2);
 
-
-    int numXrows = Matrix2.rows();
     int numXcols = Matrix2.cols();
     MatrixXd logOfX(Matrix2.rows(), Matrix2.cols());
     log_of_Matrix(logOfX, file2contentCopy);
+
     MatrixXd Xmean(1, 9); //hard coded for now
     MatrixXd Xstd(1, 9);    //hard coded for now
     MatrixXd Xz(2000, 9);   //hard coded for now
 
-    for(int i = 0; i < numXcols; i++){
-        Xmean(i) = X.col(i).sum();
-        //Xstd(i) = X.col(i).standardDeviation
-        //Xz.col(i) = X.col(i) - Xmean(i) / Xstd(i);
-    }
-    MatrixXd Y= [Matrix0, Matrix1];
-    //Y.col(1) -> need to take log of this col
-    //Y.col(3) -> need to take log of this col
 
-    int numYrows = Y.rows();
+    for(int i = 0; i < numXcols; i++){
+        Xmean(i) = logOfX.col(i).sum();
+        Xstd(i) = standard_deviation(logOfX.col(i));
+        for(int x = 0; x < logOfX.rows(); x++){
+            double temp = logOfX(x, i) - Xmean(i);
+            double p = temp/Xstd(i);
+            Xz(x, i) = p;
+        }
+    }
+
+    MatrixXd Y(Matrix0.rows(), Matrix0.cols()+Matrix1.cols());
+    Y << Matrix0, Matrix1;
+    for(int f = 0; f < Y.rows(); f++){
+        Y(f,1) = log(Y(f,1));
+        Y(f,3) = log(Y(f,3));
+    }
+
     int numYcols = Y.cols();
     double Yact[9];
     Yact[0]= 77.36266321;
@@ -77,11 +87,23 @@ int main()
     MatrixXd Yact1(1, 9);
     for(int i = 0; i < numYcols; i++){
         Ymean(i) = Y.col(i).sum();
-        Ystd(i) = Y.col(i).std();
-        Yz.col(i) = Y.col(i) - Ymean(i) / Y.std(i);
-        Yact1.col(i) = Yact[i] - Ymean(i) / Ystd(i);
+        Ystd(i) = standard_deviation(Y.col(i));
+        for(int x = 0; x < Yz.rows(); x++){
+            double temp = Yz(x, i) - Ymean(i);
+            double p = temp/Ystd(i);
+            Yz(x, i) = p;
+        }
+        for(int x = 0; x < Yact1.rows(); x++){
+            double temp = Yact[i] - Ymean(i);
+            double p = temp/Ystd(i);
+            Yact1(x, i) = p;
+        }
     }
-            return 0;
+    MatrixXd Theta(9, 9);
+    Theta = (Xz.transpose() * Xz)*Xz.transpose()*Yz;
+  // MainWindow *graphing = new MainWindow(Theta);
+
+  return 0;
 }
 void get_dimensions(QString filename, int & row, int & column, vector<QString> & filecontents){
     QFile file(filename);
@@ -102,7 +124,7 @@ void get_dimensions(QString filename, int & row, int & column, vector<QString> &
     }
     column--;
 }
-void load_into_matrix(vector<QString> & filecontents, MatrixXd M){
+void load_into_matrix(vector<QString> & filecontents, MatrixXd &M){
     int i = 0;
     while(filecontents.size() > 0){
         QString line = filecontents.back();
@@ -122,7 +144,7 @@ void load_into_matrix(vector<QString> & filecontents, MatrixXd M){
         filecontents.pop_back();
     }
 }
-void log_of_Matrix(MatrixXd M, vector<QString> & filecontents){
+void log_of_Matrix(MatrixXd &M, vector<QString> & filecontents){
     int i = 0;
     while(filecontents.size() > 0){
         QString line = filecontents.back();
@@ -141,4 +163,19 @@ void log_of_Matrix(MatrixXd M, vector<QString> & filecontents){
         i++;
         filecontents.pop_back();
     }
+}
+double standard_deviation(MatrixXd M){
+    double sum =  M.sum();
+    double variance = 0.0;
+
+    for(int i = 0; i < M.rows(); i++){
+        double temp = M(i,0) - sum;
+        temp = pow(temp, 2.0);
+        variance += temp;
+    }
+    //needs to be debuged
+    double x= variance/(M.rows());
+    double ret = sqrt(x);
+
+    return ret;
 }
