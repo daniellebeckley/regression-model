@@ -14,7 +14,6 @@ using namespace Eigen;
 using namespace std;
 
 void get_dimensions(QString filename, int & row, int & column, vector<QString> & filecontents);
-void load_into_matrix(vector<QString> & filecontents, MatrixXd M);
 void load_into_matrix(vector<QString> & filecontents, MatrixXd & M);
 void log_of_Matrix(MatrixXd & M, vector<QString> & filecontents);
 double standard_deviation(MatrixXd M);
